@@ -133,7 +133,7 @@ public class RedisConfig {
         + ", port="
         + port
         + ", password='"
-        + password
+        + "[REDACTED]"
         + '\''
         + '}';
   }

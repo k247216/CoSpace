@@ -68,3 +68,5 @@ Actuator 健康入口仅在服务器内部使用。当前性能指标由版本�
 默认公开演示配置限制单文件和新空间容量；这不是整个站点的总成本上限。运营者仍需检查账号/空间数量、磁盘、OSS 用量和账目，按明确规则清理自己的测试资料。不要自动删除其他用户的内容来释放空间。
 
 `benchmark.py cleanup` 仅清理它自己的 fixture 关联目录与文件并核对 used/reserved 归零，随后删除本地含令牌的 fixture。它不删除账号和空间；空测试空间可以保留。
+
+Azure 同时绑定网卡和子网 NSG 时，两者都须允许入口流量，核对的是有效规则。[官方排障步骤](https://learn.microsoft.com/en-us/azure/virtual-network/diagnose-network-traffic-filter-problem)。
