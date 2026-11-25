@@ -16,8 +16,18 @@ services:
     entrypoint: [sh, -ec]
     command:
       - |
+        admin() {
+          java -XX:ActiveProcessorCount=1 -Xms32m -Xmx96m -Drocketmq.home.dir="$$ROCKETMQ_HOME" -cp "$$ROCKETMQ_HOME/lib/*" org.apache.rocketmq.tools.command.MQAdminStartup "$$@"
+        }
         for attempt in $$(seq 1 30); do
-          java -XX:ActiveProcessorCount=1 -Xms32m -Xmx96m -Drocketmq.home.dir="$$ROCKETMQ_HOME" -cp "$$ROCKETMQ_HOME/lib/*" org.apache.rocketmq.tools.command.MQAdminStartup updateTopic -n namesrv:9876 -b broker:20911 -t rpan-cleanup-integration -r 1 -w 1 && exit 0
+          # MQAdmin can print a failed command and still exit 0. Check actual route data.
+          admin updateTopic -n namesrv:9876 -b broker:20911 -t rpan-cleanup-integration -r 1 -w 1
+          admin topicRoute -n namesrv:9876 -t rpan-cleanup-integration > /tmp/cospace-route.json 2>&1
+          if grep -q '"brokerAddrs"' /tmp/cospace-route.json && grep -q ':20911' /tmp/cospace-route.json; then
+            cat /tmp/cospace-route.json
+            exit 0
+          fi
           sleep 2
         done
+        cat /tmp/cospace-route.json
         exit 1

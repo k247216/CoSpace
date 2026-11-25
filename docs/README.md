@@ -11,5 +11,6 @@
 - [性能口径和原始结果](performance.md)
 - [部署排障](operations.md)
 - [演示与简历表述](demo-and-resume.md)
+- [发布故障记录](failure-cases.md)
 
 设计文档保留阶段推导和当时测试结果，当前发布验收数量以测试说明为准。
