@@ -6,7 +6,9 @@ services:
     network_mode: host
     mem_limit: 128m
     environment:
-      COSPACE_PUBLIC_HOST: ${COSPACE_PUBLIC_HOST:?Set the public IP or host}
+      COSPACE_PUBLIC_HOST: ${COSPACE_PUBLIC_HOST:?Set the public domain}
+      COSPACE_PUBLIC_IP: ${COSPACE_PUBLIC_IP:?Set the server public IP}
+      COSPACE_UPSTREAM: ${COSPACE_UPSTREAM:-127.0.0.1:18080}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - tls-data:/data

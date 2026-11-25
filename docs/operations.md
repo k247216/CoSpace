@@ -15,6 +15,27 @@ python3 scripts/init-env.py --output /安全目录/cospace.env --port 18080
 
 更新保留原 `.env`、持久卷与可回滚的上一版发布目录。先校验 Compose 配置，再启动应用和 Web；核对健康、文件下载和容量后切换 current。不要为更新应用删除数据库卷。代码回滚不能自动撤销已提交的数据迁移，应使用向前兼容的增量方案。
 
+## 公开体验与 OSS 联调
+
+公开体验地址：[https://cospace-demo.duckdns.org/](https://cospace-demo.duckdns.org/)。
+
+| 环境 | Compose 项目 | HTTP 入口 | 存储 |
+| --- | --- | --- | --- |
+| 公开体验 | cospace-demo | 服务器回环 18081，经 Caddy 公开 | 独立本地存储卷 |
+| OSS 联调 | cospace | 服务器回环 18080，经 SSH 隧道访问 | 私有 OSS Bucket |
+
+两个环境使用各自的数据库、Redis、MQ、容量账目、会话密钥和存储卷。公开体验关闭 OSS 适配器与直传，应用不注入 OSS 凭证；域名和原 IP 的 HTTPS 入口均代理到公开体验。原 OSS 文件和账户保留在联调环境，体验账户独立注册。
+
+公开体验复用同一个发布包，先用 `scripts/init-env.py` 为体验目录生成配置，设置 `COSPACE_SHARE_PREFIX=https://cospace-demo.duckdns.org/share/`，再用 `docker compose -p cospace-demo --env-file /体验目录/.env -f /发布目录/compose.yaml up -d` 启动。默认配置为本地存储。Caddy 的 `COSPACE_UPSTREAM` 设置为 `127.0.0.1:18081`。
+
+访问私下 OSS 环境时，在本机建立 SSH 转发：
+
+```bash
+ssh -N -L 18080:127.0.0.1:18080 你的SSH主机别名
+```
+
+随后打开 `http://127.0.0.1:18080`。更新发布时分别指定项目名和各自的私有配置文件。
+
 ## OSS 配置
 
 首选一个真实私有 Bucket，默认端点使用其所属地域的公网 HTTPS Endpoint。跨云服务器不能使用阿里云 VPC 内网 Endpoint。应用角色或专用 RAM 用户只授予业务对象前缀需要的写、读、删除、ListParts、AbortMultipartUpload 权限；不要给予整个账号的管理权限。
@@ -42,7 +63,7 @@ Bucket 生命周期只对业务前缀配置清理未完成分片；已有环境�
 
 ## HTTPS
 
-`deploy/public/compose.yaml` 为独立边缘项目。将其与 Caddyfile 放在服务器上，设置 `COSPACE_PUBLIC_HOST` 后启动。80/443 必须在云安全组和主机防火墙都可达。Caddy 配置使用 ACME shortlived profile，TLS 数据卷需要持久化；不要删除证书卷后反复申请证书。
+`deploy/public/compose.yaml` 为独立边缘项目。将其与 Caddyfile 放在服务器上，在同目录 `.env` 中填写 `COSPACE_PUBLIC_HOST`（域名）和 `COSPACE_PUBLIC_IP`（服务器公网 IP），然后启动。配置示例见 `deploy/public/.env.example`。域名与 IP 均提供 HTTPS 访问。80/443 必须在云安全组和主机防火墙都可达。Caddy 配置使用 ACME shortlived profile，TLS 数据卷需要持久化；不要删除证书卷后反复申请证书。
 
 公网 IP 证书与配置参考：[Let's Encrypt IP certificates](https://letsencrypt.org/2026/01/15/6day-and-ip-general-availability)、[Caddy TLS](https://caddyserver.com/docs/caddyfile/directives/tls)。证书签发成功、回环访问成功、普通访客网络访问成功是三项不同检查。
 

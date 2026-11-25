@@ -7,7 +7,9 @@ CoSpace 是一个面向个人与小团队的云盘，支持文件存储、团队
 [![Verify](https://github.com/k247216/CoSpace/actions/workflows/verify.yml/badge.svg)](https://github.com/k247216/CoSpace/actions/workflows/verify.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-**[在线体验](https://20.205.139.174/)** · [设计文档](docs/README.md) · [部署指南](docs/operations.md)
+**[在线体验](https://cospace-demo.duckdns.org/)** · [设计文档](docs/README.md) · [部署指南](docs/operations.md)
+
+公开体验使用 Azure VM 本地存储，OSS 上传与续传保留在独立联调环境中。
 
 ![CoSpace 首页](docs/images/home.png)
 

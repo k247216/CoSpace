@@ -1,8 +1,8 @@
 {
-	default_sni {$COSPACE_PUBLIC_HOST}
+	default_sni {$COSPACE_PUBLIC_IP}
 }
 
-{$COSPACE_PUBLIC_HOST} {
+{$COSPACE_PUBLIC_HOST}, {$COSPACE_PUBLIC_IP} {
 	tls {
 		issuer acme {
 			dir https://acme-v02.api.letsencrypt.org/directory
@@ -16,5 +16,5 @@
 		Referrer-Policy strict-origin-when-cross-origin
 		X-Frame-Options SAMEORIGIN
 	}
-	reverse_proxy 127.0.0.1:18080
+	reverse_proxy {$COSPACE_UPSTREAM:127.0.0.1:18080}
 }

@@ -47,7 +47,7 @@
 
 团队验收后冻结功能，发布独立的 CoSpace 仓库。保留底座许可证和来源说明，在 README 说明本项目增量设计及实测范围。发布前检查 Git 跟踪文件和历史中是否存在凭证，已暴露的凭证先轮换。源码、增量 SQL 和必要部署配置进入仓库，运行目录、数据库备份、密钥和临时日志通过忽略规则排除。
 
-项目已发布到独立仓库 [CoSpace](https://github.com/k247216/CoSpace)，公开体验地址为 [https://20.205.139.174/](https://20.205.139.174/)。Azure 提供 HTTPS 应用入口，私有 OSS Bucket 配置实际页面来源的 CORS。公网浏览器已验证上传、下载、删除与容量结算。README 提供体验入口、功能介绍、技术栈和启动方法。
+项目已发布到独立仓库 [CoSpace](https://github.com/k247216/CoSpace)，公开体验地址为 [https://cospace-demo.duckdns.org/](https://cospace-demo.duckdns.org/)。Azure 提供 HTTPS 应用入口。公开体验采用独立数据库、会话配置与本地存储卷，OSS 环境通过 SSH 隧道用于私下联调。README 提供体验入口、功能介绍、技术栈和启动方法。
 
 最终材料集中到 README、架构与请求流程、部署说明、故障复盘和演示脚本。简历只采用实际实现并验证的结论，性能数据须有可复现的测试记录。
 
