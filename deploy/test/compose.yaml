@@ -1,0 +1,23 @@
+name: cospace-integration
+services:
+  namesrv:
+    image: apache/rocketmq:5.3.2
+    command: [sh, -ec, 'exec java -XX:ActiveProcessorCount=2 -Xms64m -Xmx128m -Drocketmq.home.dir="$$ROCKETMQ_HOME" -cp "$$ROCKETMQ_HOME/lib/*" org.apache.rocketmq.namesrv.NamesrvStartup']
+    ports: ['127.0.0.1:19876:9876']
+  broker:
+    image: apache/rocketmq:5.3.2
+    depends_on: [namesrv]
+    command: [sh, -ec, 'exec java -XX:ActiveProcessorCount=2 -Xms64m -Xmx256m -XX:MaxDirectMemorySize=128m -Drocketmq.home.dir="$$ROCKETMQ_HOME" -cp "$$ROCKETMQ_HOME/lib/*" org.apache.rocketmq.broker.BrokerStartup -c /etc/cospace/broker.conf']
+    ports: ['127.0.0.1:20911:20911', '127.0.0.1:20909:20909']
+    volumes: ['./broker.conf:/etc/cospace/broker.conf:ro']
+  topic:
+    image: apache/rocketmq:5.3.2
+    depends_on: [broker]
+    entrypoint: [sh, -ec]
+    command:
+      - |
+        for attempt in $$(seq 1 30); do
+          java -XX:ActiveProcessorCount=1 -Xms32m -Xmx96m -Drocketmq.home.dir="$$ROCKETMQ_HOME" -cp "$$ROCKETMQ_HOME/lib/*" org.apache.rocketmq.tools.command.MQAdminStartup updateTopic -n namesrv:9876 -b broker:20911 -t rpan-cleanup-integration -r 1 -w 1 && exit 0
+          sleep 2
+        done
+        exit 1

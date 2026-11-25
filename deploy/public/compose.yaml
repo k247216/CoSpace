@@ -1,0 +1,16 @@
+name: cospace-edge
+services:
+  edge:
+    image: caddy:2@sha256:4851e54a46b206517c574821bb5cc67f170d2156041e9fbc4c9193b45e84a75b
+    restart: unless-stopped
+    network_mode: host
+    mem_limit: 128m
+    environment:
+      COSPACE_PUBLIC_HOST: ${COSPACE_PUBLIC_HOST:?Set the public IP or host}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - tls-data:/data
+      - tls-config:/config
+volumes:
+  tls-data:
+  tls-config:

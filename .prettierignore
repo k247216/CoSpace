@@ -1,0 +1,6 @@
+frontend/public/static/
+frontend/node_modules/
+frontend/dist/
+backend/
+runtime/
+benchmark/results/

@@ -1,0 +1,54 @@
+{
+  "mode": "closed-loop, keep-alive; client and server placement recorded separately",
+  "workload": "tree",
+  "dataset_items": 200,
+  "warmup_requests": 5,
+  "percentile_method": "nearest rank",
+  "runs": [
+    {
+      "concurrency": 1,
+      "requests": 300,
+      "errors": 0,
+      "duration_seconds": 6.2244,
+      "successful_rps": 48.2,
+      "p50_ms": 19.413855,
+      "p95_ms": 32.470594,
+      "p99_ms": 41.552946,
+      "response_bytes": 16326600
+    },
+    {
+      "concurrency": 4,
+      "requests": 300,
+      "errors": 0,
+      "duration_seconds": 2.985,
+      "successful_rps": 100.5,
+      "p50_ms": 37.968428,
+      "p95_ms": 61.864464,
+      "p99_ms": 80.483639,
+      "response_bytes": 16326600
+    },
+    {
+      "concurrency": 8,
+      "requests": 300,
+      "errors": 0,
+      "duration_seconds": 2.2984,
+      "successful_rps": 130.53,
+      "p50_ms": 60.193653,
+      "p95_ms": 85.391345,
+      "p99_ms": 96.523664,
+      "response_bytes": 16326600
+    },
+    {
+      "concurrency": 16,
+      "requests": 300,
+      "errors": 0,
+      "duration_seconds": 2.3107,
+      "successful_rps": 129.83,
+      "p50_ms": 121.548528,
+      "p95_ms": 192.358416,
+      "p99_ms": 227.952278,
+      "response_bytes": 16326600
+    }
+  ],
+  "recorded_at_utc": "2026-11-25T09:36:13Z"
+}

@@ -1,0 +1,11 @@
+com.rubin.rpan.util.file.type.ArchiveFileDefiner
+com.rubin.rpan.util.file.type.AudioFileDefiner
+com.rubin.rpan.util.file.type.CodeFileDefiner
+com.rubin.rpan.util.file.type.ExcelFileDefiner
+com.rubin.rpan.util.file.type.ImgFileDefiner
+com.rubin.rpan.util.file.type.NormalFileDefiner
+com.rubin.rpan.util.file.type.PdfFileDefiner
+com.rubin.rpan.util.file.type.PowerPointFileDefiner
+com.rubin.rpan.util.file.type.TxtFileDefiner
+com.rubin.rpan.util.file.type.VideoFileDefiner
+com.rubin.rpan.util.file.type.WordFileDefiner

@@ -1,0 +1,157 @@
+name: cospace
+
+x-rocketmq-image: &rocketmq-image apache/rocketmq:5.3.2
+
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    mem_limit: 640m
+    command: ["--innodb-buffer-pool-size=128M", "--max-connections=40"]
+    environment:
+      MYSQL_DATABASE: cospace
+      MYSQL_USER: cospace
+      MYSQL_PASSWORD: ${COSPACE_MYSQL_PASSWORD:?Set COSPACE_MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${COSPACE_MYSQL_ROOT_PASSWORD:?Set COSPACE_MYSQL_ROOT_PASSWORD}
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./schema.sql:/docker-entrypoint-initdb.d/01-cospace.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "MYSQL_PWD=\"$$MYSQL_PASSWORD\" mysql --protocol=TCP -h127.0.0.1 -u cospace cospace -Nse 'SELECT 1 FROM r_pan_user_space LIMIT 0'"]
+      interval: 5s
+      timeout: 4s
+      retries: 30
+
+  redis:
+    image: redis:7.4-alpine
+    restart: unless-stopped
+    mem_limit: 128m
+    environment:
+      REDISCLI_AUTH: ${COSPACE_REDIS_PASSWORD:?Set COSPACE_REDIS_PASSWORD}
+    command: ["sh", "-ec", "exec redis-server --appendonly yes --maxmemory 64mb --requirepass \"$$REDISCLI_AUTH\""]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep -qx PONG"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  namesrv:
+    image: *rocketmq-image
+    restart: unless-stopped
+    mem_limit: 256m
+    command:
+      - sh
+      - -ec
+      - exec java -XX:ActiveProcessorCount=2 -Xms64m -Xmx128m -Drocketmq.home.dir="$$ROCKETMQ_HOME" -cp "$$ROCKETMQ_HOME/lib/*" org.apache.rocketmq.namesrv.NamesrvStartup
+
+  broker-volume:
+    image: *rocketmq-image
+    user: "0:0"
+    command: ["chown", "rocketmq:rocketmq", "/home/rocketmq/store"]
+    volumes:
+      - rocketmq-data:/home/rocketmq/store
+
+  broker:
+    image: *rocketmq-image
+    restart: unless-stopped
+    mem_limit: 640m
+    depends_on:
+      namesrv:
+        condition: service_started
+      broker-volume:
+        condition: service_completed_successfully
+    command:
+      - sh
+      - -ec
+      - exec java -XX:ActiveProcessorCount=2 -Xms128m -Xmx256m -XX:MaxDirectMemorySize=160m -Drocketmq.home.dir="$$ROCKETMQ_HOME" -cp "$$ROCKETMQ_HOME/lib/*" org.apache.rocketmq.broker.BrokerStartup -c /etc/cospace/broker.conf
+    volumes:
+      - ./broker.conf:/etc/cospace/broker.conf:ro
+      - rocketmq-data:/home/rocketmq/store
+
+  cleanup-topic:
+    image: *rocketmq-image
+    mem_limit: 224m
+    depends_on:
+      broker:
+        condition: service_started
+    command:
+      - sh
+      - -ec
+      - |
+        admin() {
+          java -XX:ActiveProcessorCount=1 -Xms32m -Xmx96m -Drocketmq.home.dir="$$ROCKETMQ_HOME" -cp "$$ROCKETMQ_HOME/lib/*" org.apache.rocketmq.tools.command.MQAdminStartup "$$@"
+        }
+        for attempt in $$(seq 1 20); do
+          if admin updateTopic -n namesrv:9876 -b broker:10911 -t rpan-file-cleanup -r 1 -w 1 &&
+            admin topicRoute -n namesrv:9876 -t rpan-file-cleanup > /tmp/cospace-topic.json 2>&1 &&
+            grep -q '"brokerAddrs"' /tmp/cospace-topic.json; then
+            exit 0
+          fi
+          sleep 2
+        done
+        cat /tmp/cospace-topic.json 2>/dev/null || true
+        exit 1
+
+  app:
+    image: eclipse-temurin:21-jre
+    restart: unless-stopped
+    mem_limit: 768m
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      cleanup-topic:
+        condition: service_completed_successfully
+    command: ["java", "-XX:ActiveProcessorCount=2", "-Xms96m", "-Xmx320m", "-jar", "/opt/cospace/cospace.jar"]
+    environment:
+      SERVER_ADDRESS: 0.0.0.0
+      SERVER_PORT: "8080"
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/cospace?connectionTimeZone=%2B00:00&forceConnectionTimeZoneToSession=true&allowPublicKeyRetrieval=true&useSSL=false
+      SPRING_DATASOURCE_USERNAME: cospace
+      SPRING_DATASOURCE_PASSWORD: ${COSPACE_MYSQL_PASSWORD:?Set COSPACE_MYSQL_PASSWORD}
+      RPAN_CACHE_REDIS_HOST: redis
+      RPAN_CACHE_REDIS_PASSWORD: ${COSPACE_REDIS_PASSWORD:?Set COSPACE_REDIS_PASSWORD}
+      RPAN_CLEANUP_NAMESERVER: namesrv:9876
+      RPAN_JWT_SECRET: ${COSPACE_JWT_SECRET:?Set COSPACE_JWT_SECRET}
+      RPAN_SHARE_PREFIX: ${COSPACE_SHARE_PREFIX:-http://127.0.0.1:18080/share/}
+      RPAN_STORAGE_LOCAL_ROOT_FILE_PATH: /var/lib/cospace/files
+      LOGGING_FILE_NAME: /var/lib/cospace/logs/cospace.log
+      RPAN_STORAGE_OSS_ENABLED: ${COSPACE_OSS_ENABLED:-false}
+      RPAN_STORAGE_OSS_REGION: ${COSPACE_OSS_REGION:-cn-guangzhou}
+      RPAN_STORAGE_OSS_BUCKET_NAME: ${COSPACE_OSS_BUCKET:-}
+      RPAN_STORAGE_OSS_ENDPOINT: ${COSPACE_OSS_ENDPOINT:-}
+      RPAN_STORAGE_OSS_CNAME: ${COSPACE_OSS_CNAME:-false}
+      OSS_ACCESS_KEY_ID: ${OSS_ACCESS_KEY_ID:-}
+      OSS_ACCESS_KEY_SECRET: ${OSS_ACCESS_KEY_SECRET:-}
+      OSS_SESSION_TOKEN: ${OSS_SESSION_TOKEN:-}
+      RPAN_UPLOAD_STORAGE_TYPE: ${COSPACE_UPLOAD_STORAGE_TYPE:-com.rubin.rpan.storage.local.LocalStorageProcessor}
+      RPAN_SPACE_DEFAULT_TOTAL_BYTES: ${COSPACE_PERSONAL_QUOTA_BYTES:-104857600}
+      RPAN_WORKSPACE_DEFAULT_TOTAL_BYTES: ${COSPACE_TEAM_QUOTA_BYTES:-209715200}
+      RPAN_UPLOAD_MAX_FILE_SIZE: ${COSPACE_MAX_FILE_BYTES:-104857600}
+      RPAN_WORKSPACE_ENABLED: ${COSPACE_WORKSPACE_ENABLED:-true}
+      RPAN_UPLOAD_OSS_DIRECT_ENABLED: ${COSPACE_OSS_DIRECT_ENABLED:-false}
+    volumes:
+      - ./cospace.jar:/opt/cospace/cospace.jar:ro
+      - app-data:/var/lib/cospace
+
+  web:
+    image: nginx:1.28-alpine
+    restart: unless-stopped
+    mem_limit: 64m
+    depends_on:
+      app:
+        condition: service_started
+    ports:
+      - "127.0.0.1:${COSPACE_HTTP_PORT:-18080}:8080"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./portal:/usr/share/nginx/html:ro
+
+volumes:
+  mysql-data:
+  redis-data:
+  rocketmq-data:
+  app-data:

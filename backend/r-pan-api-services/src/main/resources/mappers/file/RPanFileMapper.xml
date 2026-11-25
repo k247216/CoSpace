@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.rubin.rpan.modules.file.dao.RPanFileMapper">
+    <resultMap id="BaseResultMap" type="com.rubin.rpan.modules.file.entity.RPanFile">
+        <id column="file_id" jdbcType="BIGINT" property="fileId"/>
+        <result column="filename" jdbcType="VARCHAR" property="filename"/>
+        <result column="real_path" jdbcType="VARCHAR" property="realPath"/>
+        <result column="storage_type" jdbcType="VARCHAR" property="storageType"/>
+        <result column="file_size" jdbcType="VARCHAR" property="fileSize"/>
+        <result column="file_size_desc" jdbcType="VARCHAR" property="fileSizeDesc"/>
+        <result column="file_suffix" jdbcType="VARCHAR" property="fileSuffix"/>
+        <result column="file_preview_content_type" jdbcType="VARCHAR" property="filePreviewContentType"/>
+        <result column="lifecycle_state" jdbcType="VARCHAR" property="lifecycleState"/>
+        <result column="md5" jdbcType="VARCHAR" property="md5"/>
+        <result column="create_user" jdbcType="BIGINT" property="createUser"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        file_id, filename, real_path, storage_type, file_size, file_size_desc, file_suffix, file_preview_content_type, md5, create_user, create_time, lifecycle_state
+    </sql>
+    <select id="selectByPrimaryKey" parameterType="java.lang.Long" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from r_pan_file
+        where file_id = #{id,jdbcType=BIGINT}
+    </select>
+    <delete id="deleteByPrimaryKey" parameterType="java.lang.Long">
+        delete
+        from r_pan_file
+        where file_id = #{id,jdbcType=BIGINT}
+    </delete>
+    <insert id="insert" parameterType="com.rubin.rpan.modules.file.entity.RPanFile">
+        insert into r_pan_file (file_id, filename, real_path, storage_type,
+                                file_size, file_size_desc, file_suffix,
+                                file_preview_content_type, md5, create_user, create_time)
+        values (#{fileId,jdbcType=BIGINT}, #{filename,jdbcType=VARCHAR}, #{realPath,jdbcType=VARCHAR}, #{storageType,jdbcType=VARCHAR},
+                #{fileSize,jdbcType=VARCHAR}, #{fileSizeDesc,jdbcType=VARCHAR}, #{fileSuffix,jdbcType=VARCHAR},
+                #{filePreviewContentType,jdbcType=VARCHAR}, #{md5,jdbcType=VARCHAR}, #{createUser,jdbcType=BIGINT},
+                #{createTime,jdbcType=TIMESTAMP})
+    </insert>
+    <insert id="insertSelective" parameterType="com.rubin.rpan.modules.file.entity.RPanFile">
+        insert into r_pan_file
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="fileId != null">
+                file_id,
+            </if>
+            <if test="filename != null">
+                filename,
+            </if>
+            <if test="realPath != null">
+                real_path,
+            </if>
+            <if test="storageType != null">
+                storage_type,
+            </if>
+            <if test="fileSize != null">
+                file_size,
+            </if>
+            <if test="fileSizeDesc != null">
+                file_size_desc,
+            </if>
+            <if test="fileSuffix != null">
+                file_suffix,
+            </if>
+            <if test="filePreviewContentType != null">
+                file_preview_content_type,
+            </if>
+            <if test="md5 != null">
+                md5,
+            </if>
+            <if test="createUser != null">
+                create_user,
+            </if>
+            <if test="createTime != null">
+                create_time,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="fileId != null">
+                #{fileId,jdbcType=BIGINT},
+            </if>
+            <if test="filename != null">
+                #{filename,jdbcType=VARCHAR},
+            </if>
+            <if test="realPath != null">
+                #{realPath,jdbcType=VARCHAR},
+            </if>
+            <if test="storageType != null">
+                #{storageType,jdbcType=VARCHAR},
+            </if>
+            <if test="fileSize != null">
+                #{fileSize,jdbcType=VARCHAR},
+            </if>
+            <if test="fileSizeDesc != null">
+                #{fileSizeDesc,jdbcType=VARCHAR},
+            </if>
+            <if test="fileSuffix != null">
+                #{fileSuffix,jdbcType=VARCHAR},
+            </if>
+            <if test="filePreviewContentType != null">
+                #{filePreviewContentType,jdbcType=VARCHAR},
+            </if>
+            <if test="md5 != null">
+                #{md5,jdbcType=VARCHAR},
+            </if>
+            <if test="createUser != null">
+                #{createUser,jdbcType=BIGINT},
+            </if>
+            <if test="createTime != null">
+                #{createTime,jdbcType=TIMESTAMP},
+            </if>
+        </trim>
+    </insert>
+    <update id="updateByPrimaryKeySelective" parameterType="com.rubin.rpan.modules.file.entity.RPanFile">
+        update r_pan_file
+        <set>
+            <if test="filename != null">
+                filename = #{filename,jdbcType=VARCHAR},
+            </if>
+            <if test="realPath != null">
+                real_path = #{realPath,jdbcType=VARCHAR},
+            </if>
+            <if test="fileSize != null">
+                file_size = #{fileSize,jdbcType=VARCHAR},
+            </if>
+            <if test="fileSizeDesc != null">
+                file_size_desc = #{fileSizeDesc,jdbcType=VARCHAR},
+            </if>
+            <if test="fileSuffix != null">
+                file_suffix = #{fileSuffix,jdbcType=VARCHAR},
+            </if>
+            <if test="filePreviewContentType != null">
+                file_preview_content_type = #{filePreviewContentType,jdbcType=VARCHAR},
+            </if>
+            <if test="md5 != null">
+                md5 = #{md5,jdbcType=VARCHAR},
+            </if>
+            <if test="createUser != null">
+                create_user = #{createUser,jdbcType=BIGINT},
+            </if>
+            <if test="createTime != null">
+                create_time = #{createTime,jdbcType=TIMESTAMP},
+            </if>
+        </set>
+        where file_id = #{fileId,jdbcType=BIGINT}
+    </update>
+    <update id="updateByPrimaryKey" parameterType="com.rubin.rpan.modules.file.entity.RPanFile">
+        update r_pan_file
+        set filename                  = #{filename,jdbcType=VARCHAR},
+            real_path                 = #{realPath,jdbcType=VARCHAR},
+            file_size                 = #{fileSize,jdbcType=VARCHAR},
+            file_size_desc            = #{fileSizeDesc,jdbcType=VARCHAR},
+            file_suffix               = #{fileSuffix,jdbcType=VARCHAR},
+            file_preview_content_type = #{filePreviewContentType,jdbcType=VARCHAR},
+            md5                       = #{md5,jdbcType=VARCHAR},
+            create_user               = #{createUser,jdbcType=BIGINT},
+            create_time               = #{createTime,jdbcType=TIMESTAMP}
+        where file_id = #{fileId,jdbcType=BIGINT}
+    </update>
+
+    <!--===================================================================自定义===================================================================-->
+
+    <select id="selectByFileIdList" resultMap="BaseResultMap">
+        SELECT
+            <include refid="Base_Column_List"/>
+        FROM
+            r_pan_file
+        WHERE
+            file_id IN
+        <foreach collection="fileIdList" open="(" close=")" item="item" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <delete id="deleteBatch">
+        DELETE FROM r_pan_file WHERE file_id IN
+        <foreach collection="fileIdList" open="(" close=")" item="item" separator=",">
+            #{item}
+        </foreach>
+    </delete>
+
+    <select id="selectByMd5" resultMap="BaseResultMap">
+        SELECT
+            <include refid="Base_Column_List"/>
+        FROM
+            r_pan_file
+        WHERE
+            md5 = #{md5}
+    </select>
+
+    <!-- 授权依据是有效用户引用，不是物理文件的创建者。 -->
+    <select id="selectReusableFile" resultMap="BaseResultMap">
+        SELECT f.*
+        FROM r_pan_file f
+        WHERE f.md5 = #{md5} AND f.file_size = #{size}
+          AND f.lifecycle_state = 'ACTIVE'
+          AND EXISTS (
+            SELECT 1 FROM r_pan_user_file uf
+            WHERE uf.real_file_id = f.file_id AND uf.user_id = #{userId}
+              AND uf.del_flag = 0 AND uf.folder_flag = 0
+          )
+        ORDER BY f.create_time DESC, f.file_id DESC
+        LIMIT 1
+    </select>
+
+    <!-- 当前读，并清空MyBatis会话缓存，不能用旧快照/缓存决定生命周期。 -->
+    <select id="selectByIdForUpdate" resultMap="BaseResultMap" useCache="false" flushCache="true">
+        SELECT <include refid="Base_Column_List"/>
+        FROM r_pan_file WHERE file_id = #{fileId} FOR UPDATE
+    </select>
+    <update id="markDeleting">
+        UPDATE r_pan_file SET lifecycle_state = 'DELETING'
+        WHERE file_id = #{fileId} AND lifecycle_state = 'ACTIVE'
+    </update>
+
+    <update id="markDeleted">
+        UPDATE r_pan_file SET lifecycle_state='DELETED'
+        WHERE file_id=#{fileId} AND lifecycle_state='DELETING'
+    </update>
+    <select id="countByRealPath" resultType="int" useCache="false" flushCache="true">
+        SELECT COUNT(*) FROM r_pan_file WHERE real_path=#{realPath}
+    </select>
+</mapper>

@@ -1,0 +1,20 @@
+{
+	default_sni {$COSPACE_PUBLIC_HOST}
+}
+
+{$COSPACE_PUBLIC_HOST} {
+	tls {
+		issuer acme {
+			dir https://acme-v02.api.letsencrypt.org/directory
+			profile shortlived
+		}
+	}
+	@internal path /api/actuator/* /api/swagger-ui* /api/v3/api-docs*
+	respond @internal 404
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		X-Frame-Options SAMEORIGIN
+	}
+	reverse_proxy 127.0.0.1:18080
+}

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.rubin.rpan.modules.file.dao.UserSpaceMapper">
+    <sql id="account">user_id AS userId,total_bytes AS totalBytes,used_bytes AS usedBytes,reserved_bytes AS reservedBytes</sql>
+    <sql id="reservation">upload_id AS uploadId,user_id AS userId,request_id AS requestId,bytes,state</sql>
+    <insert id="create">INSERT INTO r_pan_user_space(user_id,total_bytes) VALUES(#{userId},#{total})</insert>
+    <select id="select" resultType="com.rubin.rpan.modules.file.quota.model.UserSpaceAccount" useCache="false" flushCache="true">
+        SELECT <include refid="account"/> FROM r_pan_user_space WHERE user_id=#{userId}
+    </select>
+    <select id="lock" resultType="com.rubin.rpan.modules.file.quota.model.UserSpaceAccount" useCache="false" flushCache="true">
+        SELECT <include refid="account"/> FROM r_pan_user_space WHERE user_id=#{userId} FOR UPDATE
+    </select>
+    <update id="reserve">
+        UPDATE r_pan_user_space SET reserved_bytes=reserved_bytes+#{bytes},updated_at=CURRENT_TIMESTAMP
+        WHERE user_id=#{userId} AND total_bytes-used_bytes-reserved_bytes &gt;= #{bytes}
+    </update>
+    <update id="charge">
+        UPDATE r_pan_user_space SET used_bytes=used_bytes+#{bytes},updated_at=CURRENT_TIMESTAMP
+        WHERE user_id=#{userId} AND total_bytes-used_bytes-reserved_bytes &gt;= #{bytes}
+    </update>
+    <update id="releaseUsed">
+        UPDATE r_pan_user_space SET used_bytes=used_bytes-#{bytes},updated_at=CURRENT_TIMESTAMP
+        WHERE user_id=#{userId} AND used_bytes &gt;= #{bytes}
+    </update>
+    <update id="settle">
+        UPDATE r_pan_user_space SET reserved_bytes=reserved_bytes-#{bytes},
+        <if test="commit">used_bytes=used_bytes+#{bytes},</if>
+        updated_at=CURRENT_TIMESTAMP WHERE user_id=#{userId} AND reserved_bytes &gt;= #{bytes}
+    </update>
+    <insert id="insertReservation">
+        INSERT INTO r_pan_upload_reservation(upload_id,user_id,request_id,bytes,state)
+        VALUES(#{uploadId},#{userId},#{requestId},#{bytes},'RESERVED')
+    </insert>
+    <select id="findRequest" resultType="com.rubin.rpan.modules.file.quota.model.UploadReservation" useCache="false" flushCache="true">
+        SELECT <include refid="reservation"/> FROM r_pan_upload_reservation WHERE user_id=#{userId} AND request_id=#{requestId}
+    </select>
+    <select id="lockReservation" resultType="com.rubin.rpan.modules.file.quota.model.UploadReservation" useCache="false" flushCache="true">
+        SELECT <include refid="reservation"/> FROM r_pan_upload_reservation WHERE upload_id=#{uploadId} FOR UPDATE
+    </select>
+    <update id="settleReservation">
+        UPDATE r_pan_upload_reservation SET state=#{state},updated_at=CURRENT_TIMESTAMP
+        WHERE upload_id=#{uploadId} AND state='RESERVED'
+    </update>
+</mapper>

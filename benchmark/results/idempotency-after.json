@@ -1,0 +1,13 @@
+{
+  "completed_task_initialize_replays": 16,
+  "initialization_http_statuses": {
+    "429": 6,
+    "200": 10
+  },
+  "completed_task_complete_replays": 16,
+  "logical_files": 1,
+  "used_bytes": 1066,
+  "reserved_bytes": 0,
+  "passed": true,
+  "recorded_at_utc": "2026-11-25T09:36:40Z"
+}

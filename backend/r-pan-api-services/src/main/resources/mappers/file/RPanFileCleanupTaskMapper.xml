@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.rubin.rpan.modules.file.dao.RPanFileCleanupTaskMapper">
+    <resultMap id="TaskResultMap" type="com.rubin.rpan.modules.file.entity.RPanFileCleanupTask">
+        <id column="task_id" property="taskId"/>
+        <result column="real_file_id" property="realFileId"/>
+        <result column="storage_type" property="storageType"/>
+        <result column="storage_locator" property="storageLocator"/>
+        <result column="execution_state" property="executionState"/>
+        <result column="delivery_state" property="deliveryState"/>
+        <result column="delivery_attempts" property="deliveryAttempts"/>
+        <result column="execution_attempts" property="executionAttempts"/>
+        <result column="next_delivery_at" property="nextDeliveryAt"/>
+        <result column="lease_owner" property="leaseOwner"/>
+        <result column="lease_until" property="leaseUntil"/>
+        <result column="last_error" property="lastError"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+        <result column="completed_at" property="completedAt"/>
+    </resultMap>
+    <!-- 其余状态/次数/时间由表默认值填入，不能在此发送消息。 -->
+    <insert id="insert">
+        INSERT INTO r_pan_file_cleanup_task(task_id, real_file_id, storage_type, storage_locator)
+        VALUES (#{taskId}, #{realFileId}, #{storageType}, #{storageLocator})
+    </insert>
+    <select id="selectByRealFileId" resultMap="TaskResultMap" useCache="false" flushCache="true">
+        SELECT * FROM r_pan_file_cleanup_task WHERE real_file_id = #{realFileId}
+    </select>
+
+    <select id="selectById" resultMap="TaskResultMap" useCache="false" flushCache="true">
+        SELECT * FROM r_pan_file_cleanup_task WHERE task_id=#{taskId}
+    </select>
+    <select id="selectByIdForUpdate" resultMap="TaskResultMap" useCache="false" flushCache="true">
+        SELECT * FROM r_pan_file_cleanup_task WHERE task_id=#{taskId} FOR UPDATE
+    </select>
+    <select id="selectDue" resultMap="TaskResultMap" useCache="false" flushCache="true">
+        SELECT * FROM r_pan_file_cleanup_task
+        WHERE execution_state IN ('PENDING','RETRY','PROCESSING')
+          AND next_delivery_at &lt;= #{now}
+          AND (execution_state != 'PROCESSING' OR lease_until IS NULL OR lease_until &lt;= #{now})
+        ORDER BY next_delivery_at,task_id LIMIT #{limit}
+    </select>
+    <update id="reserveDelivery">
+        UPDATE r_pan_file_cleanup_task
+        SET delivery_attempts=delivery_attempts+1, delivery_state='PENDING',
+            next_delivery_at=#{next}, updated_at=#{now}
+        WHERE task_id=#{taskId} AND delivery_attempts=#{attempts} AND next_delivery_at &lt;= #{now}
+          AND execution_state IN ('PENDING','RETRY','PROCESSING')
+          AND (execution_state != 'PROCESSING' OR lease_until IS NULL OR lease_until &lt;= #{now})
+    </update>
+    <update id="recordDelivery">
+        UPDATE r_pan_file_cleanup_task
+        SET delivery_state=<choose><when test="sent">'SENT'</when><otherwise>'PENDING'</otherwise></choose>,
+            <if test="!sent">last_error=#{error},</if>
+            updated_at=#{now}
+        WHERE task_id=#{taskId} AND delivery_attempts=#{attempts}
+        <if test="!sent">
+          AND execution_state IN ('PENDING','RETRY') AND execution_attempts=#{executionAttempts}
+        </if>
+    </update>
+    <update id="claim">
+        UPDATE r_pan_file_cleanup_task
+        SET execution_state='PROCESSING',execution_attempts=execution_attempts+1,
+            lease_owner=#{owner},lease_until=#{until},updated_at=#{now}
+        WHERE task_id=#{taskId} AND execution_state IN ('PENDING','RETRY','PROCESSING')
+    </update>
+    <update id="finish">
+        UPDATE r_pan_file_cleanup_task
+        SET execution_state='SUCCEEDED',lease_owner=NULL,lease_until=NULL,last_error=NULL,
+            completed_at=#{now},updated_at=#{now}
+        WHERE task_id=#{taskId} AND execution_state='PROCESSING' AND lease_owner=#{owner}
+    </update>
+    <update id="fail">
+        UPDATE r_pan_file_cleanup_task
+        SET execution_state=#{state},last_error=#{error},next_delivery_at=#{next},
+            delivery_state='PENDING',lease_owner=NULL,lease_until=NULL,updated_at=#{now}
+        WHERE task_id=#{taskId} AND execution_state='PROCESSING' AND lease_owner=#{owner}
+    </update>
+    <update id="manual">
+        UPDATE r_pan_file_cleanup_task
+        SET execution_state='MANUAL',last_error=#{error},lease_owner=NULL,lease_until=NULL,updated_at=#{now}
+        WHERE task_id=#{taskId} AND execution_state != 'SUCCEEDED'
+    </update>
+    <update id="retryManual">
+        UPDATE r_pan_file_cleanup_task
+        SET execution_state='RETRY',delivery_state='PENDING',execution_attempts=0,
+            next_delivery_at=#{now},last_error=NULL,lease_owner=NULL,lease_until=NULL,updated_at=#{now}
+        WHERE task_id=#{taskId} AND execution_state='MANUAL'
+    </update>
+</mapper>

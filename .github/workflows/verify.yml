@@ -1,0 +1,51 @@
+name: Verify
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  unit-and-frontend:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '21', cache: maven}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22', cache: npm, cache-dependency-path: frontend/package-lock.json}
+      - run: bash scripts/format-java.sh
+      - run: mvn -B -ntp -f backend/pom.xml -pl r-pan-api-services -am test
+      - run: npm --prefix frontend ci
+      - run: npm --prefix frontend run format:check
+      - run: npm --prefix frontend run test:upload
+      - run: npm --prefix frontend run build
+      - run: npm --prefix frontend audit --omit=dev --audit-level=high
+  integration:
+    runs-on: ubuntu-24.04
+    services:
+      mysql:
+        image: mysql:8.4
+        env: {MYSQL_ROOT_PASSWORD: cospace-ci-only}
+        ports: ['3306:3306']
+        options: --health-cmd="mysqladmin ping -h127.0.0.1 -pcospace-ci-only" --health-interval=5s --health-timeout=5s --health-retries=30
+      redis:
+        image: redis:7.4-alpine
+        ports: ['6379:6379']
+        options: --health-cmd="redis-cli ping" --health-interval=5s --health-timeout=3s --health-retries=20
+    env:
+      RPAN_TEST_MYSQL_USER: root
+      RPAN_TEST_MYSQL_PASSWORD: cospace-ci-only
+      RPAN_TEST_MQ_NAMESERVER: 127.0.0.1:19876
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '21', cache: maven}
+      - run: sudo apt-get update -qq && sudo apt-get install -y default-mysql-client
+      - run: docker compose -f deploy/test/compose.yaml up -d namesrv broker
+      - run: docker compose -f deploy/test/compose.yaml run --rm topic
+      - run: bash scripts/check-backend-regression.sh -B -ntp
+      - if: failure()
+        run: docker compose -f deploy/test/compose.yaml logs --tail=100
+      - if: always()
+        run: docker compose -f deploy/test/compose.yaml down -v
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: integration-reports, path: '**/target/surefire-reports/*.xml'}

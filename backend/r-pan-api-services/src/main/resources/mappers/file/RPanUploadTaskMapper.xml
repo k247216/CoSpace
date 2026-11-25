@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.rubin.rpan.modules.file.dao.RPanUploadTaskMapper">
+    <resultMap id="TaskMap" type="com.rubin.rpan.modules.file.entity.RPanUploadTask">
+        <result column="upload_id" property="uploadId"/>
+        <result column="workspace_id" property="workspaceId"/>
+        <result column="collection_id" property="collectionId"/>
+        <result column="collection_member_generation" property="collectionMemberGeneration"/>
+        <result column="membership_generation" property="membershipGeneration"/>
+        <result column="direct_upload" property="directUpload"/>
+        <result column="multipart_id" property="multipartId"/>
+        <result column="artifacts_cleaned_at" property="artifactsCleanedAt"/>
+        <result column="artifact_cleanup_error" property="artifactCleanupError"/>
+        <result column="user_id" property="userId"/>
+        <result column="parent_id" property="parentId"/>
+        <result column="filename" property="filename"/>
+        <result column="expected_md5" property="expectedMd5"/>
+        <result column="file_size" property="fileSize"/>
+        <result column="chunk_size" property="chunkSize"/>
+        <result column="total_chunks" property="totalChunks"/>
+        <result column="storage_type" property="storageType"/>
+        <result column="task_state" property="taskState"/>
+        <result column="expires_at" property="expiresAt"/>
+        <result column="final_path" property="finalPath"/>
+        <result column="real_file_id" property="realFileId"/>
+        <result column="user_file_id" property="userFileId"/>
+        <result column="last_error" property="lastError"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+    </resultMap>
+    <insert id="insert">
+        INSERT INTO r_pan_upload_task(upload_id,user_id,parent_id,filename,expected_md5,file_size,
+            chunk_size,total_chunks,storage_type,task_state,expires_at,created_at,updated_at
+            <if test="directUpload">,direct_upload</if><if test="workspaceId != null">,workspace_id,membership_generation</if><if test="collectionId != null">,collection_id,collection_member_generation</if>)
+        VALUES(#{uploadId},#{userId},#{parentId},#{filename},#{expectedMd5},#{fileSize},
+            #{chunkSize},#{totalChunks},#{storageType},#{taskState},#{expiresAt},#{createdAt},#{updatedAt}
+            <if test="directUpload">,TRUE</if><if test="workspaceId != null">,#{workspaceId},#{membershipGeneration}</if><if test="collectionId != null">,#{collectionId},#{collectionMemberGeneration}</if>)
+    </insert>
+    <update id="setMultipartId">
+        UPDATE r_pan_upload_task SET multipart_id=#{multipartId},final_path=#{locator}
+        WHERE upload_id=#{uploadId} AND direct_upload=TRUE AND task_state='UPLOADING' AND multipart_id IS NULL
+    </update>
+    <insert id="insertPartDigest">
+        INSERT INTO r_pan_upload_part(upload_id,part_number,md5) VALUES(#{uploadId},#{part},#{md5})
+    </insert>
+    <select id="selectPartDigest" resultType="string" useCache="false">
+        SELECT md5 FROM r_pan_upload_part WHERE upload_id=#{uploadId} AND part_number=#{part}
+    </select>
+    <select id="listPartDigests" resultType="com.rubin.rpan.modules.file.upload.model.UploadPartDigest" useCache="false">
+        SELECT part_number AS part, md5 FROM r_pan_upload_part WHERE upload_id=#{uploadId}
+    </select>
+    <delete id="deletePartDigests">
+        DELETE FROM r_pan_upload_part WHERE upload_id=#{uploadId}
+    </delete>
+    <select id="selectById" resultMap="TaskMap" useCache="false" flushCache="true">
+        SELECT * FROM r_pan_upload_task WHERE upload_id=#{uploadId}
+    </select>
+    <select id="selectForUpdate" resultMap="TaskMap" useCache="false" flushCache="true">
+        SELECT * FROM r_pan_upload_task WHERE upload_id=#{uploadId} FOR UPDATE
+    </select>
+    <update id="startFinalizing">
+        UPDATE r_pan_upload_task SET task_state='FINALIZING',final_path=#{finalPath},last_error=NULL,
+            updated_at=CURRENT_TIMESTAMP WHERE upload_id=#{uploadId} AND task_state='UPLOADING'
+    </update>
+    <update id="complete">
+        UPDATE r_pan_upload_task SET task_state='COMPLETED',real_file_id=#{realFileId},user_file_id=#{userFileId},
+            last_error=NULL,updated_at=CURRENT_TIMESTAMP WHERE upload_id=#{uploadId} AND task_state='FINALIZING'
+    </update>
+    <update id="recordError">
+        UPDATE r_pan_upload_task SET last_error=#{error},updated_at=CURRENT_TIMESTAMP
+        <if test="failed">,task_state='FAILED'</if>
+        WHERE upload_id=#{uploadId} AND task_state='FINALIZING'
+    </update>
+    <select id="selectGarbageCandidates" resultMap="TaskMap" useCache="false" flushCache="true">
+        SELECT * FROM r_pan_upload_task
+        WHERE storage_type=#{storageType} AND artifacts_cleaned_at IS NULL AND (
+            (task_state='UPLOADING' AND expires_at &lt;= #{now}) OR
+            (task_state='FINALIZING' AND expires_at &lt;= #{now} AND updated_at &lt;= #{stale}) OR
+            task_state='COMPLETED' OR
+            (task_state IN ('EXPIRED','FAILED')
+              <if test="abandonedBefore != null">AND (final_path IS NULL OR updated_at &lt;= #{abandonedBefore})</if>
+            ))
+        ORDER BY updated_at,upload_id LIMIT #{limit}
+    </select>
+    <update id="expire">
+        UPDATE r_pan_upload_task SET task_state='EXPIRED',updated_at=#{now}
+        WHERE upload_id=#{uploadId} AND task_state IN ('UPLOADING','FINALIZING')
+    </update>
+    <update id="artifactsCleaned">
+        UPDATE r_pan_upload_task SET artifacts_cleaned_at=#{now},artifact_cleanup_error=NULL,updated_at=#{now}
+        WHERE upload_id=#{uploadId} AND task_state IN ('EXPIRED','FAILED','COMPLETED')
+    </update>
+    <update id="artifactCleanupFailed">
+        UPDATE r_pan_upload_task SET artifact_cleanup_error=#{error},updated_at=#{now}
+        WHERE upload_id=#{uploadId} AND artifacts_cleaned_at IS NULL
+          AND task_state IN ('EXPIRED','FAILED','COMPLETED')
+    </update>
+</mapper>

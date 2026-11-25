@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+    <modules>
+        <module>r-pan-api-services</module>
+        <module>r-pan-api-util</module>
+        <module>r-pan-api-cache</module>
+        <module>r-pan-api-schedule</module>
+        <module>r-pan-api-storage</module>
+    </modules>
+    <parent>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>4.0.10</version>
+		<relativePath/> <!-- lookup parent from repository -->
+	</parent>
+	<groupId>com.rubin</groupId>
+	<artifactId>r-pan-api</artifactId>
+	<version>4.0</version>
+	<name>CoSpace Backend</name>
+	<description>CoSpace file storage and team workspace services</description>
+    <packaging>pom</packaging>
+
+	<properties>
+		<java.version>21</java.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+		<mybatis.version>4.0.1</mybatis.version>
+
+		<guava.version>20.0</guava.version>
+		<commons-lang3.version>3.5</commons-lang3.version>
+		<commons-collections.version>3.2.1</commons-collections.version>
+
+		<jjwt.version>0.13.0</jjwt.version>
+		<commons-io.version>2.22.0</commons-io.version>
+
+		<hutool.version>4.5.18</hutool.version>
+
+		<fastdfs.client.version>1.26.1-RELEASE</fastdfs.client.version>
+		<oss.client.version>3.18.4</oss.client.version>
+	</properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!--mybatis-spring-boot-starter-->
+            <dependency>
+                <groupId>org.mybatis.spring.boot</groupId>
+                <artifactId>mybatis-spring-boot-starter</artifactId>
+                <version>${mybatis.version}</version>
+            </dependency>
+            <!--guava-->
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>${guava.version}</version>
+            </dependency>
+            <!--commons-lang3-->
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>${commons-lang3.version}</version>
+            </dependency>
+            <!--commons-collections-->
+            <dependency>
+                <groupId>commons-collections</groupId>
+                <artifactId>commons-collections</artifactId>
+                <version>${commons-collections.version}</version>
+            </dependency>
+            <!--commons-io-->
+            <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>${commons-io.version}</version>
+            </dependency>
+            <!--hutool-core-->
+            <dependency>
+                <groupId>cn.hutool</groupId>
+                <artifactId>hutool-core</artifactId>
+                <version>${hutool.version}</version>
+            </dependency>
+            <!--r-pan-api-components-->
+            <dependency>
+                <groupId>com.rubin</groupId>
+                <artifactId>r-pan-api-util</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.rubin</groupId>
+                <artifactId>r-pan-api-cache-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.rubin</groupId>
+                <artifactId>r-pan-api-cache-redis</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.rubin</groupId>
+                <artifactId>r-pan-api-cache-local</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.rubin</groupId>
+                <artifactId>r-pan-api-schedule</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.rubin</groupId>
+                <artifactId>r-pan-api-storage-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.rubin</groupId>
+                <artifactId>r-pan-api-storage-local</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.rubin</groupId>
+                <artifactId>r-pan-api-storage-fastdfs</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.rubin</groupId>
+                <artifactId>r-pan-api-storage-oss</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.rubin</groupId>
+                <artifactId>r-pan-api-storage-s3</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.tobato</groupId>
+                <artifactId>fastdfs-client</artifactId>
+                <version>${fastdfs.client.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.aliyun.oss</groupId>
+                <artifactId>aliyun-sdk-oss</artifactId>
+                <version>${oss.client.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+</project>
