@@ -38,6 +38,10 @@ bash scripts/check-backend-regression.sh -B -ntp
 
 CI 使用临时 MySQL、Redis 和 RocketMQ 容器，并上传 Surefire XML。CI 中的固定数据库口令仅供该次临时服务，不是部署凭证。
 
+## 空库部署冒烟
+
+构建并解包发布目录后运行 `bash scripts/check-compose-smoke.sh /发布目录`。它使用独立 Compose 项目和新卷，默认仅监听回环 18083，验证新库、本地存储、团队上传下载、重放和清理，最后删除自身容器和卷。需要可用 Docker；不要传真实 `.env`。
+
 ## 浏览器验收清单
 
 使用独立浏览器会话分别登录管理员、成员、只读者、外部受邀者。注册两个空间，核验跨空间访问拒绝。

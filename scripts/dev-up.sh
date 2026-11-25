@@ -13,6 +13,9 @@ if [[ ! -f runtime/dev.env ]]; then
 fi
 cp runtime/dev.env "$release/.env"
 chmod 600 "$release/.env"
+# MySQL and Nginx run as container users that must read these non-secret mounts.
+chmod a+r "$release/schema.sql" "$release/broker.conf" "$release/nginx.conf"
+chmod -R a+rX "$release/portal"
 docker compose -p cospace-dev --env-file "$release/.env" -f "$release/compose.yaml" up -d
 ln -sfn "$(basename "$release")" runtime/dev-current
 printf 'Local CoSpace: http://127.0.0.1:%s\n' "${COSPACE_DEV_PORT:-18081}"
